@@ -9,6 +9,8 @@
 package physical_network;
 
 import java.util.Arrays;
+import java.util.List;
+import java.util.ArrayList;
 import java.util.concurrent.*;
 
 
@@ -25,7 +27,7 @@ import java.util.concurrent.*;
 
 public class NetworkCard {
     
-	// Wire pair that the network card is atatched to.
+	// Wire pair that the network card is attached to.
     private final TwistedWirePair wire;
 
     // Unique device number and name given to the network card.
@@ -56,6 +58,7 @@ public class NetworkCard {
     
     // Receiver thread.
     private Thread rxThread;
+
     
     /**
      * NetworkCard constructor.
@@ -103,8 +106,8 @@ public class NetworkCard {
 	    		while (true) {
 	    			
 	    			// Blocks if nothing is in queue.
-	    			DataFrame frame = outputQueue.take();
-	    			transmitFrame(frame);
+						DataFrame frame = outputQueue.take();
+						transmitFrame(frame);
 	    		}
     		} catch (InterruptedException except) {
     			System.out.println(deviceName + " Transmitter Thread Interrupted - terminated.");
@@ -125,8 +128,9 @@ public class NetworkCard {
     			// Low voltage signal to get ready ...
     			wire.setVoltage(deviceName, LOW_VOLTAGE);
     			sleep(PULSE_WIDTH*4);
+
     			
-    			byte[] payload = frame.getTransmittedBytes();
+    			byte[] payload = frame.getTransmittedBytes(deviceNumber);
     			
     			// Send bytes in asynchronous style with 0.2 seconds gaps between them.
     			for (int i = 0; i < payload.length; i++) {
@@ -183,18 +187,54 @@ public class NetworkCard {
         	try {
         		
     			// Listen for data frames.
-        		
+
+
+
+
 	    		while (true) {
+
 
 	    			byte[] bytePayload = new byte[MAX_PAYLOAD_SIZE];
 	    			int bytePayloadIndex = 0;
 		    		byte receivedByte;
+					int parse=0;
+					String destCheck="";
+
+
+
+					List<String> message = new ArrayList<String>();
+					String EntireM="";
 	    			
 	        		do {
 	        			
 	        			receivedByte = receiveByte();
-	        			
+						byte[] temp={receivedByte};
+
+						String p = new String(temp);
+						if(parse==1) {
+
+							parse=2;
+							System.out.print("hello");
+							if(Integer.parseInt(p)!=deviceNumber)
+							{
+
+								continue;
+							}
+
+						}
+						if(p.equals(";")){
+							parse++;
+						}
+
 	        			System.out.println(deviceName + " RECEIVED BYTE = " + Integer.toHexString(receivedByte & 0xFF));
+
+
+	        			System.out.println("this is" +p);
+	        			EntireM=EntireM+p;
+
+
+
+
 	        			
 	        			if ((receivedByte & 0xFF) != 0x7E) {
 	            			// Unstuff if escaped.        			
@@ -210,12 +250,101 @@ public class NetworkCard {
 	        		} while ((receivedByte & 0xFF) != 0x7E);
 	        			        		
 	        		// Block receiving data if queue full.
+
+
+					String mess="";
+					int i=0;
+					for(;;i++)
+					{
+
+						char c=EntireM.charAt(i);
+						if(c==';')
+						{
+							break;
+						}
+						mess=mess+c;
+
+					}
+					String dest="";
+					i++;
+					for(;;i++)
+					{
+
+						char c=EntireM.charAt(i);
+						if(c==';')
+						{
+							break;
+						}
+						dest=dest+c;
+
+					}
+					String source="";
+					i++;
+					for(;;i++)
+					{
+
+						char c=EntireM.charAt(i);
+						if(c==';')
+						{
+							break;
+						}
+						source=source+c;
+
+					}
+					String ackB="";
+					i++;
+					for(;;i++)
+					{
+
+						char c=EntireM.charAt(i);
+						if(c==';')
+						{
+							break;
+						}
+						ackB=ackB+c;
+
+					}
+					String check="";
+					i++;
+					for(;;i++)
+					{
+
+						char c=EntireM.charAt(i);
+						if(c==';')
+						{
+							break;
+						}
+						check=check+c;
+
+					}
+					String checker = mess+';'+dest+';'+source+';'+ ackB +';';
+					byte[] b = checker.getBytes();
+
+                    int n = (int) calculateChecksum(b);
+                    int o =Integer.parseInt(check);
+
+                    if(n!=o)
+					{
+						continue;
+					}
+
+
+
+
+
+
+
 	        		inputQueue.put(new DataFrame(Arrays.copyOfRange(bytePayload, 0, bytePayloadIndex)));
+					System.out.print("heya"+check);
 	    		}
+
+
+
 
             } catch (InterruptedException except) {
                 System.out.println(deviceName + " Interrupted: " + getName());
             }
+
     		
     	}
     	
@@ -247,6 +376,45 @@ public class NetworkCard {
     	}
     	
     }
+	public long calculateChecksum(byte[] buf) {
+		int length = buf.length;
+		int i = 0;
+
+		long sum = 0;
+		long data;
+
+
+		while (length > 1) {
+
+			data = (((buf[i] << 8) & 0xFF00) | ((buf[i + 1]) & 0xFF));
+			sum += data;
+
+			if ((sum & 0xFFFF0000) > 0) {
+				sum = sum & 0xFFFF;
+				sum += 1;
+			}
+
+			i += 2;
+			length -= 2;
+		}
+
+
+		if (length > 0) {
+
+			sum += (buf[i] << 8 & 0xFF00);
+
+			if ((sum & 0xFFFF0000) > 0) {
+				sum = sum & 0xFFFF;
+				sum += 1;
+			}
+		}
+
+		// Final 1's complement value correction to 16-bits
+		sum = ~sum;
+		sum = sum & 0xFFFF;
+		return sum;
+
+	}
 
     
 }
