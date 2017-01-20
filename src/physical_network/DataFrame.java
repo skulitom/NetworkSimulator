@@ -144,8 +144,6 @@ public class DataFrame {
 		sum = ~sum;
 		sum = sum & 0xFFFF;
 		return sum;
-
 	}
-	
 }
 

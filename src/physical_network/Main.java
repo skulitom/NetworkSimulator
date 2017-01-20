@@ -73,6 +73,5 @@ public class Main {
         	System.out.println("\n *** RECEIVED: " + receivedData + "\n");
         	
         }
-        
     }
 }

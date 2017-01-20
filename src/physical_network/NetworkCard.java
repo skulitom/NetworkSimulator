@@ -62,9 +62,9 @@ public class NetworkCard {
     
     /**
      * NetworkCard constructor.
-     * @param deviceName This provides the name of this device, i.e. "Network Card A".
+     * @param //deviceName This provides the name of this device, i.e. "Network Card A".
      * @param wire       This is the shared wire that this network card is connected to.
-     * @param listener   A data frame listener that should be informed when data frames are received.
+     * @param //listener   A data frame listener that should be informed when data frames are received.
      *                   (May be set to 'null' if network card should not respond to data frames.)
      */
     public NetworkCard(int number, TwistedWirePair wire) {
@@ -187,10 +187,6 @@ public class NetworkCard {
         	try {
         		
     			// Listen for data frames.
-
-
-
-
 	    		while (true) {
 
 
@@ -200,44 +196,26 @@ public class NetworkCard {
 					int parse=0;
 					String destCheck="";
 
-
-
 					List<String> message = new ArrayList<String>();
 					String EntireM="";
 	    			
 	        		do {
-	        			
 	        			receivedByte = receiveByte();
 						byte[] temp={receivedByte};
 
 						String p = new String(temp);
+
 						if(parse==1) {
-
 							parse=2;
-							System.out.print("hello");
-							if(Integer.parseInt(p)!=deviceNumber)
-							{
-
-								continue;
-							}
-
+							if(Integer.parseInt(p)!= deviceNumber) {continue;}
 						}
-						if(p.equals(";")){
-							parse++;
-						}
+
+						if(p.equals(";")){parse++;}
 
 	        			System.out.println(deviceName + " RECEIVED BYTE = " + Integer.toHexString(receivedByte & 0xFF));
-
-
-	        			System.out.println("this is" +p);
 	        			EntireM=EntireM+p;
 
-
-
-
-	        			
 	        			if ((receivedByte & 0xFF) != 0x7E) {
-	            			// Unstuff if escaped.        			
 		        			if (receivedByte == 0x7D) {
 		        				receivedByte = receiveByte();
 		        				System.out.println(deviceName + " ESCAPED RECEIVED BYTE = " + Integer.toHexString(receivedByte & 0xFF));
@@ -250,92 +228,64 @@ public class NetworkCard {
 	        		} while ((receivedByte & 0xFF) != 0x7E);
 	        			        		
 	        		// Block receiving data if queue full.
-
-
 					String mess="";
 					int i=0;
 					for(;;i++)
 					{
-
 						char c=EntireM.charAt(i);
-						if(c==';')
-						{
-							break;
-						}
+						if(c==';') {break;}
 						mess=mess+c;
-
 					}
+
 					String dest="";
 					i++;
+
 					for(;;i++)
 					{
-
 						char c=EntireM.charAt(i);
-						if(c==';')
-						{
-							break;
-						}
+						if(c==';') {break;}
 						dest=dest+c;
-
 					}
+
 					String source="";
 					i++;
+
 					for(;;i++)
 					{
-
 						char c=EntireM.charAt(i);
-						if(c==';')
-						{
-							break;
-						}
+						if(c==';') {break;}
 						source=source+c;
-
 					}
+
 					String ackB="";
 					i++;
+
 					for(;;i++)
 					{
 
 						char c=EntireM.charAt(i);
-						if(c==';')
-						{
-							break;
-						}
+						if(c==';') {break;}
 						ackB=ackB+c;
 
 					}
+
 					String check="";
 					i++;
 					for(;;i++)
 					{
-
 						char c=EntireM.charAt(i);
-						if(c==';')
-						{
-							break;
-						}
+						if(c==';') {break;}
 						check=check+c;
-
 					}
+
 					String checker = mess+';'+dest+';'+source+';'+ ackB +';';
 					byte[] b = checker.getBytes();
 
                     int n = (int) calculateChecksum(b);
-                    int o =Integer.parseInt(check);
-
-                    if(n!=o)
-					{
-						continue;
-					}
-
-
-
-
-
-
+                    int o = Integer.parseInt(check);
+					if(n != o) {continue;}
 
 	        		inputQueue.put(new DataFrame(Arrays.copyOfRange(bytePayload, 0, bytePayloadIndex)));
-					System.out.print("heya"+check);
 	    		}
 
 
@@ -376,6 +326,7 @@ public class NetworkCard {
     	}
     	
     }
+
 	public long calculateChecksum(byte[] buf) {
 		int length = buf.length;
 		int i = 0;
@@ -413,8 +364,5 @@ public class NetworkCard {
 		sum = ~sum;
 		sum = sum & 0xFFFF;
 		return sum;
-
 	}
-
-    
 }
