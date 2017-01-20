@@ -99,20 +99,16 @@ public class NetworkCard {
      * Private inner thread class that transmits data.
      */
     private class TXThread extends Thread {
-    	
     	public void run() {
-    		
     		try {
 	    		while (true) {
-	    			
 	    			// Blocks if nothing is in queue.
-						DataFrame frame = outputQueue.take();
-						transmitFrame(frame);
+					DataFrame frame = outputQueue.take();
+					transmitFrame(frame);
 	    		}
     		} catch (InterruptedException except) {
     			System.out.println(deviceName + " Transmitter Thread Interrupted - terminated.");
     		}
-    		
     	}
 
     	/**
@@ -124,20 +120,16 @@ public class NetworkCard {
         public void transmitFrame(DataFrame frame) throws InterruptedException {
         	
     		if (frame != null) {
-    			
     			// Low voltage signal to get ready ...
     			wire.setVoltage(deviceName, LOW_VOLTAGE);
     			sleep(PULSE_WIDTH*4);
-
     			
     			byte[] payload = frame.getTransmittedBytes(deviceNumber);
     			
     			// Send bytes in asynchronous style with 0.2 seconds gaps between them.
     			for (int i = 0; i < payload.length; i++) {
-    				
     	    		// Byte stuff if required.
-    	    		if (payload[i] == 0x7E || payload[i] == 0x7D)
-    	    			transmitByte((byte)0x7D);
+    	    		if (payload[i] == 0x7E || payload[i] == 0x7D) {transmitByte((byte)0x7D);}
     	    		
     	    		transmitByte(payload[i]);
     			}
@@ -145,12 +137,9 @@ public class NetworkCard {
     			// Append a 0x7E to terminate frame.
         		transmitByte((byte)0x7E);
     		}
-
-    		
         }
         
     	private void transmitByte(byte value) throws InterruptedException {
-
     		// Low voltage signal ...
     		wire.setVoltage(deviceName, LOW_VOLTAGE);
     		sleep(PULSE_WIDTH*4);
@@ -160,36 +149,29 @@ public class NetworkCard {
     		sleep(PULSE_WIDTH);
     		
     		// Go through bits in the value (big-endian bits first) and send pulses.
-    		
             for (int bit = 0; bit < 8; bit++) {
                 if ((value & 0x80) == 0x80) {
                     wire.setVoltage(deviceName, HIGH_VOLTAGE);
                 } else {
                     wire.setVoltage(deviceName, LOW_VOLTAGE);
                 }
-                
+
                 // Shift value.
                 value <<= 1;  
 
                 sleep(PULSE_WIDTH);
             }
     	}
-    	
     }
     
     /*
      * Private inner thread class that receives data.
      */    
     private class RXThread extends Thread {
-    	
     	public void run() {
-    		
         	try {
-        		
     			// Listen for data frames.
 	    		while (true) {
-
-
 	    			byte[] bytePayload = new byte[MAX_PAYLOAD_SIZE];
 	    			int bytePayloadIndex = 0;
 		    		byte receivedByte;
@@ -230,6 +212,7 @@ public class NetworkCard {
 	        		// Block receiving data if queue full.
 					String mess="";
 					int i=0;
+
 					for(;;i++)
 					{
 						char c=EntireM.charAt(i);
@@ -262,11 +245,9 @@ public class NetworkCard {
 
 					for(;;i++)
 					{
-
 						char c=EntireM.charAt(i);
 						if(c==';') {break;}
 						ackB=ackB+c;
-
 					}
 
 					String check="";
@@ -288,55 +269,42 @@ public class NetworkCard {
 	        		inputQueue.put(new DataFrame(Arrays.copyOfRange(bytePayload, 0, bytePayloadIndex)));
 	    		}
 
-
-
-
             } catch (InterruptedException except) {
                 System.out.println(deviceName + " Interrupted: " + getName());
             }
-
-    		
     	}
     	
     	public byte receiveByte() throws InterruptedException {
-    		
     		double thresholdVoltage = (LOW_VOLTAGE + 2.0 * HIGH_VOLTAGE)/3;
     		byte value = 0;
     		    		
     		while (wire.getVoltage(deviceName) < thresholdVoltage) {
     			sleep(PULSE_WIDTH/10);
     		}
-    		
+
     		// Sleep till middle of next pulse.
     		sleep(PULSE_WIDTH + PULSE_WIDTH/2);
     		
     		// Use 8 next pulses for byte.
     		for (int i = 0; i < 8; i++) {
-    			
     			value *= 2;
-    		
         		if (wire.getVoltage(deviceName) > thresholdVoltage) {
         			value += 1;
         		}
-        		
         		sleep(PULSE_WIDTH);
     		}
     		
     		return value;
     	}
-    	
     }
 
 	public long calculateChecksum(byte[] buf) {
 		int length = buf.length;
 		int i = 0;
-
 		long sum = 0;
 		long data;
 
-
 		while (length > 1) {
-
 			data = (((buf[i] << 8) & 0xFF00) | ((buf[i + 1]) & 0xFF));
 			sum += data;
 
@@ -348,10 +316,8 @@ public class NetworkCard {
 			i += 2;
 			length -= 2;
 		}
-
-
+		
 		if (length > 0) {
-
 			sum += (buf[i] << 8 & 0xFF00);
 
 			if ((sum & 0xFFFF0000) > 0) {
